@@ -53,7 +53,6 @@ class TaskViewModel(private val dao: TaskDao) : ViewModel() {
         }
     }
 
-    // Nueva función para actualizar la descripción de una tarea
     fun updateTaskDescription(task: Task, newDescription: String) {
         viewModelScope.launch {
             val updatedTask = task.copy(description = newDescription)
@@ -62,5 +61,15 @@ class TaskViewModel(private val dao: TaskDao) : ViewModel() {
             _filteredTasks.value = _tasks.value
         }
     }
+
+    // Nueva función para ordenar las tareas por estado
+    fun filterTasksByStatus(showCompleted: Boolean?) {
+        _filteredTasks.value = when (showCompleted) {
+            true -> _tasks.value.filter { it.isCompleted }
+            false -> _tasks.value.filter { !it.isCompleted }
+            else -> _tasks.value // Muestra todas si `showCompleted` es nulo
+        }
+    }
 }
+
 
