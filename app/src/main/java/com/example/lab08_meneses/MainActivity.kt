@@ -39,6 +39,7 @@ fun TaskScreen(viewModel: TaskViewModel) {
     val tasks by viewModel.tasks.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var newTaskDescription by remember { mutableStateOf("") }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -81,12 +82,38 @@ fun TaskScreen(viewModel: TaskViewModel) {
         }
 
         Button(
-            onClick = { coroutineScope.launch { viewModel.deleteAllTasks() } },
+            onClick = { showDeleteConfirmation = true },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
             Text("Eliminar todas las tareas")
         }
+
+        if (showDeleteConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = { Text("Confirmación") },
+                text = { Text("¿Estás seguro de que deseas eliminar todas las tareas?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                viewModel.deleteAllTasks()
+                                showDeleteConfirmation = false
+                            }
+                        }
+                    ) {
+                        Text("Sí")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmation = false }) {
+                        Text("No")
+                    }
+                }
+            )
+        }
     }
 }
+
