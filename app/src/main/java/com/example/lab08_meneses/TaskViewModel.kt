@@ -70,6 +70,14 @@ class TaskViewModel(private val dao: TaskDao) : ViewModel() {
             else -> _tasks.value // Muestra todas si `showCompleted` es nulo
         }
     }
+    fun deleteTask(task: Task) {
+        viewModelScope.launch {
+            dao.deleteTask(task)
+            _tasks.value = dao.getAllTasks()
+            _filteredTasks.value = _tasks.value
+        }
+    }
+
 }
 
 

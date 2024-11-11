@@ -10,11 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.room.Room
 import kotlinx.coroutines.launch
 import com.example.lab08_meneses.ui.theme.Lab08MenesesTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,6 +38,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+// Colores
+val LightBackground = Color(0xFFF7F7F7) // Gris muy claro para fondo en tema claro
+val DarkBackground = Color(0xFF121212) // Gris oscuro para fondo en tema oscuro
+val LightAppBarColor = Color(0xFFE0E0E0) // Gris claro para barra en tema claro
+val DarkAppBarColor = Color(0xFF1F1F1F) // Gris más oscuro para barra en tema oscuro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,16 +53,23 @@ fun TaskScreen(viewModel: TaskViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var editingTask: Task? by remember { mutableStateOf(null) }
     var editedDescription by remember { mutableStateOf("") }
+    var taskToDelete: Task? by remember { mutableStateOf(null) }
+
+    //detección de modo oscuro
+    val isDarkTheme = isSystemInDarkTheme()
+    val backgroundColor = if (isDarkTheme) DarkBackground else LightBackground
+    val appBarColor = if (isDarkTheme) DarkAppBarColor else LightAppBarColor
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Aplicativo de Tareas") },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = appBarColor
                 )
             )
-        }
+        },
+        containerColor = backgroundColor 
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -75,7 +89,6 @@ fun TaskScreen(viewModel: TaskViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botones de filtro de estado
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
@@ -88,13 +101,13 @@ fun TaskScreen(viewModel: TaskViewModel) {
                 }
                 Button(
                     onClick = { viewModel.filterTasksByStatus(false) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800)) // Naranja
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
                 ) {
                     Text("Pendientes")
                 }
                 Button(
                     onClick = { viewModel.filterTasksByStatus(true) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)) // Verde
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) {
                     Text("Completadas")
                 }
@@ -129,7 +142,8 @@ fun TaskScreen(viewModel: TaskViewModel) {
             tasks.forEach { task ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (editingTask == task) {
                         TextField(
@@ -137,51 +151,67 @@ fun TaskScreen(viewModel: TaskViewModel) {
                             onValueChange = { editedDescription = it },
                             modifier = Modifier.weight(1f)
                         )
-                        Button(
+                        IconButton(
                             onClick = {
                                 viewModel.updateTaskDescription(task, editedDescription)
                                 editingTask = null
                                 editedDescription = ""
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            modifier = Modifier.size(24.dp)
                         ) {
-                            Text("Guardar")
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Guardar",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
-                        Button(
+                        IconButton(
                             onClick = { editingTask = null },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                            modifier = Modifier.size(24.dp)
                         ) {
-                            Text("Cancelar")
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Cancelar",
+                                tint = Color.Gray
+                            )
                         }
                     } else {
                         Text(text = task.description, modifier = Modifier.weight(1f))
-                        Button(
+                        IconButton(
                             onClick = { viewModel.toggleTaskCompletion(task) },
-                            colors = ButtonDefaults.buttonColors(containerColor = if (task.isCompleted) Color(0xFF4CAF50) else Color(0xFFFF9800))
+                            modifier = Modifier.size(24.dp)
                         ) {
-                            Text(if (task.isCompleted) "Completada" else "Pendiente")
+                            Icon(
+                                imageVector = if (task.isCompleted) Icons.Default.Edit else Icons.Default.Edit,
+                                contentDescription = if (task.isCompleted) "Completada" else "Pendiente",
+                                tint = if (task.isCompleted) Color(0xFF4CAF50) else Color(0xFFFF9800)
+                            )
                         }
-                        Button(
+                        IconButton(
                             onClick = {
                                 editingTask = task
                                 editedDescription = task.description
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            modifier = Modifier.size(24.dp)
                         ) {
-                            Text("Editar")
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        IconButton(
+                            onClick = { taskToDelete = task },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar",
+                                tint = Color.Red
+                            )
                         }
                     }
                 }
-            }
-
-            Button(
-                onClick = { coroutineScope.launch { viewModel.deleteAllTasks() } },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-            ) {
-                Text("Eliminar todas las tareas")
             }
         }
     }
