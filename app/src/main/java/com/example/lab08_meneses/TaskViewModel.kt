@@ -8,7 +8,6 @@ import kotlinx.coroutines.launch
 
 
 class TaskViewModel(private val dao: TaskDao) : ViewModel() {
-
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
     val tasks: StateFlow<List<Task>> = _tasks
 
@@ -51,6 +50,16 @@ class TaskViewModel(private val dao: TaskDao) : ViewModel() {
     fun searchTasks(query: String) {
         _filteredTasks.value = _tasks.value.filter { task ->
             task.description.contains(query, ignoreCase = true)
+        }
+    }
+
+    // Nueva función para actualizar la descripción de una tarea
+    fun updateTaskDescription(task: Task, newDescription: String) {
+        viewModelScope.launch {
+            val updatedTask = task.copy(description = newDescription)
+            dao.updateTask(updatedTask)
+            _tasks.value = dao.getAllTasks()
+            _filteredTasks.value = _tasks.value
         }
     }
 }

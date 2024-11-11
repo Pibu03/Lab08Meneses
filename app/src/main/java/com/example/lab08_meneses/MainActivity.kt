@@ -40,13 +40,14 @@ fun TaskScreen(viewModel: TaskViewModel) {
     val coroutineScope = rememberCoroutineScope()
     var newTaskDescription by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
+    var editingTask: Task? by remember { mutableStateOf(null) }
+    var editedDescription by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Barra de búsqueda
         TextField(
             value = searchQuery,
             onValueChange = { query ->
@@ -87,9 +88,33 @@ fun TaskScreen(viewModel: TaskViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = task.description)
-                Button(onClick = { viewModel.toggleTaskCompletion(task) }) {
-                    Text(if (task.isCompleted) "Completada" else "Pendiente")
+                if (editingTask == task) {
+                    TextField(
+                        value = editedDescription,
+                        onValueChange = { editedDescription = it },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(onClick = {
+                        viewModel.updateTaskDescription(task, editedDescription)
+                        editingTask = null
+                        editedDescription = ""
+                    }) {
+                        Text("Guardar")
+                    }
+                    Button(onClick = { editingTask = null }) {
+                        Text("Cancelar")
+                    }
+                } else {
+                    Text(text = task.description, modifier = Modifier.weight(1f))
+                    Button(onClick = { viewModel.toggleTaskCompletion(task) }) {
+                        Text(if (task.isCompleted) "Completada" else "Pendiente")
+                    }
+                    Button(onClick = {
+                        editingTask = task
+                        editedDescription = task.description
+                    }) {
+                        Text("Editar")
+                    }
                 }
             }
         }
@@ -104,4 +129,5 @@ fun TaskScreen(viewModel: TaskViewModel) {
         }
     }
 }
+
 
