@@ -36,16 +36,29 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TaskScreen(viewModel: TaskViewModel) {
-    val tasks by viewModel.tasks.collectAsState()
+    val tasks by viewModel.filteredTasks.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var newTaskDescription by remember { mutableStateOf("") }
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Barra de búsqueda
+        TextField(
+            value = searchQuery,
+            onValueChange = { query ->
+                searchQuery = query
+                viewModel.searchTasks(query)
+            },
+            label = { Text("Buscar tareas") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         TextField(
             value = newTaskDescription,
             onValueChange = { newTaskDescription = it },
@@ -82,37 +95,12 @@ fun TaskScreen(viewModel: TaskViewModel) {
         }
 
         Button(
-            onClick = { showDeleteConfirmation = true },
+            onClick = { coroutineScope.launch { viewModel.deleteAllTasks() } },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
         ) {
             Text("Eliminar todas las tareas")
-        }
-
-        if (showDeleteConfirmation) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirmation = false },
-                title = { Text("Confirmación") },
-                text = { Text("¿Estás seguro de que deseas eliminar todas las tareas?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                viewModel.deleteAllTasks()
-                                showDeleteConfirmation = false
-                            }
-                        }
-                    ) {
-                        Text("Sí")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmation = false }) {
-                        Text("No")
-                    }
-                }
-            )
         }
     }
 }
